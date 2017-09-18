@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <meta http-equiv='X-UA-Compatible' content='ie=edge'>
+  <title>Document</title>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.4.3/Rx.min.js'></script>
+  <style>
+    body {
+      color: #333;
+    }
+
+    #overlay {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20rem;
+    }
+
+    .red {
+      color: red;
+    }
+
+    .lightgray {
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body>
+  type your score and hit enter
+  <div id='overlay'></div>
+  <script>
+    const $numberKeyPressed = Rx.Observable
+      .fromEvent(document, 'keydown')
+      .filter(e => e.keyCode >= 48 && e.keyCode <= 57)
+      .map(e => e.key)
+
+    const $enterKeyPressed = Rx.Observable
+      .fromEvent(document, 'keydown')
+      .filter(e => e.keyCode == 13)
+
+    $numberKeyPressed
+      .buffer($enterKeyPressed)
+      .subscribe(numbers => {
+        number = +numbers.join('')
+        render(number)
+      })
+
+    const render = text => {
+      const RENDER_INTERVAL = 41.67
+      const COUNTDOWN_TIME = 3000
+
+      cancelRenderingTask()
+      elementToRender.classList.remove('red')
+
+      renderingTask = Rx.Observable.timer(0, RENDER_INTERVAL)
+        .takeUntil(Rx.Observable.timer(COUNTDOWN_TIME + RENDER_INTERVAL))
+        .subscribe(seq => {
+            const currentTimer = COUNTDOWN_TIME - seq * RENDER_INTERVAL | 0
+            elementToRender.innerHTML = `${currentTimer / 1000 | 0}<span class='lightgray'>.${currentTimer % 1000}</span>`
+          },
+          null,
+          () => {
+            elementToRender.innerText = text
+            elementToRender.classList.add('red')
+          })
+    }
+
+    const elementToRender = document.getElementById('overlay')
+    let renderingTask
+    const cancelRenderingTask = () => renderingTask && renderingTask.unsubscribe && renderingTask.unsubscribe()
+  </script>
+</body>
+
+</html>
